@@ -20,7 +20,7 @@ theme = "hugo-sustain"
   custom_js  = []
 
 [params.social]
-  Github        = "username"
+  Github        = "rimamughawish"
   Email         = "rima.mughawish@utexas.edu"
   Twitter       = "rima_Mughawish"
   LinkedIn      = "rima-mughawish-967b64186"
