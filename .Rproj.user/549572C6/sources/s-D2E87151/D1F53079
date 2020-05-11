@@ -5,13 +5,15 @@
     "dirty" : false,
     "encoding" : "UTF-8",
     "folds" : "",
-    "hash" : "4279641884",
+    "hash" : "0",
     "id" : "D1F53079",
     "lastKnownWriteTime" : 1589222910,
     "last_content_update" : 1589222910,
     "path" : "~/Desktop/Website/content/blog/2015-07-23-r-rmarkdown.Rmd",
     "project_path" : "content/blog/2015-07-23-r-rmarkdown.Rmd",
     "properties" : {
+        "cursorPosition" : "30,4",
+        "scrollLine" : "12"
     },
     "read_only" : false,
     "read_only_alternatives" : [
