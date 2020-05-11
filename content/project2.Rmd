@@ -1,0 +1,345 @@
+---
+title: "Project 2"
+author: "Rima Mughawish"
+date: "4/25/2020"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+library(knitr)
+hook_output = knit_hooks$get('output')
+knit_hooks$set(output = function(x, options) {
+  # this hook is used only when the linewidth option is not NULL
+  if (!is.null(n <- options$linewidth)) {
+    x = knitr:::split_lines(x)
+    # any lines wider than n should be wrapped
+    if (any(nchar(x) > n)) x = strwrap(x, width = n)
+    x = paste(x, collapse = '\n')
+  }
+  hook_output(x, options)
+})
+
+knitr::opts_chunk$set(echo = TRUE, eval = TRUE,fig.align="center",warning=FALSE,message=FALSE,fig.width=8, fig.height=5, linewidth=60)
+options(tibble.width = 100,width = 100)
+library(tidyverse)
+```
+
+```{r}
+
+library(MASS)
+??Pima.tr
+diabetes <- Pima.tr
+head(diabetes)
+```
+
+For this project, I picked the data set Pima.tr from package "MASS" to work with. This data set has 200 observations (Indian Women) and 8 variables. The variables measure the number of pregnancies, plasma glucose concentration, diastolic blood pressure, triceps skin fold thickness, body mass index, diabetes pedigree function, the women's age in years, and finally the variable type which answers the question are they dibetic?(yes or no) according to the World Health Organization (WHO) criteria. These observations are the measured heights for parents and children classified by gender.
+
+*MANOVA*
+```{R}
+library(mvtnorm); library(ggExtra)
+
+## Multivariate assumption
+df<-rmvnorm(1000,mean=c(0,0),sigma=matrix(c(1,.5,.5,1),ncol=2,byrow=T))
+df<-data.frame(df)%>%rename(Y1=X1,Y2=X2)
+p<-ggplot(df, aes(Y1,Y2))+geom_point(alpha=.5)+geom_density_2d(h=2)+coord_fixed()
+ggMarginal(p,type="density",xparams = list(bw=.5), yparams=list(bw=.5))
+cov(df)
+ggplot(diabetes, aes(x = glu, y = bp, z = age)) +
+geom_point(alpha = .5) + geom_density_2d(h=2) + coord_fixed() + facet_wrap(~type)
+
+#MANOVA
+covmats<-diabetes%>%group_by(type)%>%do(covs=cov(.[2:3]))
+for(i in 1:2){print(as.character(covmats$type[i])); print(covmats$covs[i])}
+man1<-manova(cbind(age,bp, glu, bmi)~type, data=diabetes)
+summary(man1)
+
+#Follow-up one way ANOVAs for Each variable 
+summary.aov(man1)
+
+diabetes%>%group_by(type)%>%summarize(mean(bp),mean(age), mean(glu), mean(bmi))
+
+#post-hoc t-test
+pairwise.t.test(diabetes$bp,diabetes$type,
+                p.adj="none")
+pairwise.t.test(diabetes$bmi,diabetes$type,
+                p.adj="none")
+pairwise.t.test(diabetes$age,diabetes$type,
+                p.adj="none")
+pairwise.t.test(diabetes$glu,diabetes$type,
+                p.adj="none")
+
+# 1 MANOVA, 4 ANOVAs, and 8 t.tests is 13 tests total
+#bonferroni adjustment
+0.05/13
+
+#probability of making a type I error 
+1-(0.95^13)
+```
+*MANOVA Assumptions:*
+1. Random samples, independent observations 
+2. Multivariate normality of blood pressure, age, glucose concentration, and BMI (response variables) 
+3. Homogeneity of within-group covariance matrices 
+4. Linear relationship among response variables
+5. No extreme univariate or multivariate outliers
+6. No multicollinearity
+
+Most (if not all) of these assumptions have been met as can be seen in the beginning.
+
+Conclusion: 
+
+A One way MANOVA was conduct to determine the effect of diabetes on glucouse concentration, age, blood pressure, and BMI. Significant differences were found among the the diabetic and non-diabetic groups, *Pillai trace*= 0.3044, *Pseudo* F(4,195) = 21.338, and P-value = 1.30e-14.
+
+Due to this significance, we conducted Univariate ANOVAs for each of the response (Dependent) variables as follow-up tests to the MANOVA. The Bonferroni method for controlling Type I error rates for multiple
+comparisons was used. The Univariate ANOVA's for all four response variables were significant, p-value<<0.05.
+
+Finally, even though it is not needed because we are only comparing two groups, post-hoc t.test was ran for each of the groups. The two types (Diabetic and non-diabetic) differed across all of the response variables that are tested, bonferroni adjustment = 0.05/13 = 0.003846154, meaning the results are all significant. 
+
+Without adjusting our alpha, the probability of making a type I error would be 48.67%. 
+
+*Randomization test*
+Hypotheses:
+Null Hypothesis: There is no significant difference in mean blood pressure between diabetic and non-diabetic indian woman.  
+Alternative hypothesis: There is a significant difference in mean blood pressure between diabetic and non-diabetic indian woman. 
+```{R}
+#Type (Diabetic or not) vs. bp
+head(diabetes)
+diabetes%>%group_by(type)%>%
+  summarize(means=mean(bp))%>%summarize(`mean_diff:`=diff(means))
+rand_dist<-vector()
+
+for(i in 1:5000){
+diabetes.new<-data.frame(bp=sample(diabetes$bp),type=diabetes$type) 
+rand_dist[i]<-mean(diabetes.new[diabetes.new$type=="Yes",]$bp)-
+              mean(diabetes.new[diabetes.new$type=="No",]$bp)}
+
+{hist(rand_dist,main="",ylab=""); abline(v = 5.042781,col="red")}
+
+#p-value 
+mean(rand_dist>5.042781)*2
+
+t.test(data=diabetes,bp~type)
+```
+Interperting the results:
+On average, Indian women who are diabetic have a significantly higher mean distolic blood pressure than those who are not diabetic. p-value = 0.0032.
+This can be confirmed furthermore by the t.test that was conducted, t-statistic = -2.9592, p-value= 0.0037, which is close to the answer that we got using the randomization test. 
+
+
+*Linear Regression Model*
+Hypotheses: 
+Null: BMI does not explain a significant variation in blood pressure and blood glucose concentration.
+ALterantive: BMI explains a significant variation in blood pressure and blood glucose concentration.
+
+
+```{R}
+library(ggplot2)
+library(sandwich)
+library(lmtest)
+
+#Checking assumptions: 
+#Linearity and Homoskedsaticity
+residsbp <- lm(bmi~bp, data = diabetes)$residuals
+ggplot()+geom_histogram(aes(residsbp), bins = 10) 
+
+residsglu <-lm(bmi~glu, data = diabetes)$residuals
+ggplot()+geom_histogram(aes(residsglu), bins = 10) 
+
+fitted_bp <- lm(bmi~bp, data = diabetes)$fitted.values
+ggplot()+geom_point(aes(fitted_bp,residsbp))+ geom_hline(yintercept = 0, color = 'red')
+
+fitted_glu <- lm(bmi~glu, data = diabetes)$fitted.values
+ggplot()+geom_point(aes(fitted_glu,residsbp)) + geom_hline(yintercept = 0, color = 'red')
+
+#Normality 
+ggplot()+geom_qq(aes(sample=residsbp))+geom_qq_line(aes(sample=residsbp))
+ggplot()+geom_qq(aes(sample=residsglu))+geom_qq_line(aes(sample=residsglu))
+
+
+#centering the response variables 
+diabetes$bp_c <- diabetes$bp - mean(diabetes$bp)
+diabetes$glu_c <- diabetes$glu - mean(diabetes$glu)
+
+#running the regression
+regression <- lm(bmi~bp_c * glu_c, data = diabetes)
+summary(regression)
+```
+Interperting the regression:
+*Intercept:* Predicted BMI for an average Blood Pressure, and average blood glucose is 32.47
+*bp_c:* Controlling for blood glucose concentration, the BMI shows an increase of 0.112 for every 1-unit increase in blood pressure on average.
+*glu_c:* Controlling for blood pressure , the BMI shows an increase of 0.0325 for every 1-unit increase in blood glucose concentration average.
+*bp_cxglu_c:* The slope for blood pressure on BMI is 0.0016 lower for those with average glucose level.
+
+```{R}
+library(dplyr)
+library(tidyverse)
+#Plotting Regresssion
+new1<-diabetes
+new1$bp_c<-mean(diabetes$bp_c)
+new1$mean<-predict(regression,new1)
+new1$bp_c<-mean(diabetes$bp_c)+sd(diabetes$bp_c)
+new1$plus.sd<-predict(regression,new1)
+new1$bp_c<-mean(diabetes$bp_c)-sd(diabetes$bp_c)
+new1$minus.sd<-predict(regression,new1)
+
+mycols<-c("#619CFF","#F8766D","#00BA38")
+names(mycols)<-c("-1 sd","mean","+1 sd")
+mycols=as.factor(mycols)
+
+ggplot(diabetes,aes(glu_c,bmi),group=mycols)+geom_point()+geom_line(data=new1,aes(y=mean,color="mean"))+geom_line(data=new1,aes(y=plus.sd,color="+1 sd"))+geom_line(data=new1,aes(y=minus.sd,color="-1 sd"))+scale_color_manual(values=mycols)+labs(color="blood pressure")+theme(legend.position=c(.9,.2))
+
+
+fit<-lm(bmi~glu_c*bp_c, data=diabetes)
+summary(fit)
+coeftest(fit, vcov=vcovHC(fit))[,1:2]
+
+```
+After recomputing regression results with robust standard errors, we can see how the standard errors for the intercept, glu_c, bp_c and their interaction increase slightly. The change was not as great because the homoskadcity assumption was met. 
+
+Finally, 7.85% of the variation in BMI can be explained by this model (p-value = 0.000268). 
+
+
+```{R}
+#Bootstrapping SEs
+set.seed(348)
+data <- diabetes
+regression <- lm(bmi ~ glu_c*bp_c, data = data)
+resids <- regression$residuals
+fitted <- regression$fitted.values
+resid_resamp <- replicate(5000, {
+new_resids <- sample(resids, replace = TRUE)
+data$new_y <- fitted + new_resids
+regression <- lm(new_y ~ glu_c*bp_c, data = data)
+coef(regression)
+})
+resid_resamp %>% t %>% as.data.frame %>% summarize_all(sd)
+
+```
+The Bootstrapped SEs are closer to the SEs that were calculated without the rebost. They are about the same. 
+
+*Logistic Regression*
+
+```{R}
+#Dummy coding diabetic
+dia.new <- diabetes%>% mutate(diabetic = ifelse(type == "Yes", 1,0))
+head(dia.new)
+#Logistic Regression
+dia.fit <- glm(diabetic ~ age + bmi + glu + bp, data = dia.new, family = "binomial")
+summary(dia.fit)
+exp(coef(dia.fit))
+```
+Interpret coefficients:
+*Intercept:* Odds for diabetes at age = 0, BMI= 0, blood glucose conc. = 0, and blood pressure = 0 is 0.0001068.
+*age:* Controlling for BMI, glu, and bp, as age increases by 1 year, the odds of diabetes increases by 1.0563.
+*bmi:* Controlling for age, glu, and bp, as BMI increases by 1 unit, the odds of diabetes increase by 1.0981. 
+*glu:* Controlling for age, BMI, and bp, as blood glucose concentration increases by 1 unit, the odds of diabetes increase by 1.0317.
+*bp:* Controlling for age, BMI, and glu, as diastolic blood pressure increases by 1 unit, the odds of diabetes increase by 0.9939.
+
+```{R}
+#Confusion matrix 
+library(class)
+probs <- predict(dia.fit, type = "response")
+table(predict = as.numeric(probs>.5), truth=dia.new$diabetic)%>%addmargins
+
+class_diag <- function(probs,truth){
+
+tab<-table(factor(probs>.5,levels=c("FALSE","TRUE")),truth)
+acc=sum(diag(tab))/sum(tab)
+sens=tab[2,2]/colSums(tab)[2]
+spec=tab[1,1]/colSums(tab)[1]
+ppv=tab[2,2]/rowSums(tab)[2]
+if(is.numeric(truth)==FALSE & is.logical(truth)==FALSE) truth<-as.numeric(truth)-1
+
+ord<-order(probs, decreasing=TRUE)
+probs <- probs[ord]; truth <- truth[ord]
+TPR=cumsum(truth)/max(1,sum(truth))
+FPR=cumsum(!truth)/max(1,sum(!truth))
+dup<-c(probs[-1]>=probs[-length(probs)], FALSE)
+TPR<-c(0,TPR[!dup],1); FPR<-c(0,FPR[!dup],1)
+n <- length(TPR)
+auc<- sum( ((TPR[-1]+TPR[-n])/2) * (FPR[-1]-FPR[-n]) )
+data.frame(acc,sens,spec,ppv,auc)
+}
+class_diag(probs, dia.new$diabetic)
+
+
+```
+The accuracy of this model is alright, so is the auc, however, we could imporve the senesitivity and sepcificity. 
+
+```{R}
+#Density Plot
+dia.new$logit <- predict(dia.fit,type="link")
+dia.new%>% ggplot()+geom_density(aes(logit,color=type,fill=type), alpha=.4)+
+  theme(legend.position=c(.85,.85))+geom_vline(xintercept=0)+xlab("logit (log-odds)")+
+  geom_rug(aes(logit,color=type))+
+  geom_text(x=-5,y=.07,label="TN = 428")+
+  geom_text(x=-1.75,y=.008,label="FN = 21")+
+  geom_text(x=1,y=.006,label="FP = 16")+
+  geom_text(x=5,y=.04,label="TP = 218")
+#ROC 
+library(pROC)
+library(plotROC)
+ROC <- ggplot(dia.new) + geom_roc(aes(d = diabetic, m = probs),
+n.cuts = 0)
+ROC
+calc_auc(ROC)
+```
+The probability of a random number is predicted by our model correctly is 83.49%.
+
+```{R}
+#10 fold CV
+set.seed(1234)
+k=10 
+data<-dia.new[sample(nrow(dia.new)),] 
+folds<-cut(seq(1:nrow(dia.new)),breaks=k,labels=F)
+diags<-NULL
+for(i in 1:k){
+train<-data[folds!=i,]
+test<-data[folds==i,]
+truth<-test$diabetic
+fit<-dia.fit
+probs<-predict(fit,newdata = test,type="response")
+diags<-rbind(diags,class_diag(probs,truth))
+}
+summarize_all(diags,mean)
+
+```
+
+Out of sample Accuracy is still the same (0.755). Out of sample sensitivity is 0.5408 which is lower than the value that was obtained for the in sample sensitivity. Since the AUC dropped, this shows that there is some overfitting by the model, therefore we will need to conduct a lasso regressio to reduce this overfitting. 
+
+*LASSO Regression*
+```{R}
+library(glmnet)
+library(Matrix)
+set.seed(1234)
+y<-as.matrix(dia.new$diabetic)
+x<-model.matrix(diabetic~ age + bmi + glu + bp, data=dia.new)[,-1]
+head(x)
+cv <- cv.glmnet(x, y, family = "binomial")
+lasso <- glmnet(x, y, lambda = cv$lambda.1se, family = "binomial")
+coef(lasso)
+
+```
+Variables that are retained: age, BMI, and blood glucose concentration. Diastolic blood pressure was not as was indicated by the lasso regression. Moreover, if we were to look at the results from the logistic regression we would see that diastolic blood pressure was the only non-significant predictor. 
+
+```{R}
+set.seed(1234)
+k=10
+data <- dia.new %>% sample_frac 
+folds <- ntile(1:nrow(data),n=10) 
+diags<-NULL
+for(i in 1:k){
+train <- data[folds!=i,]
+test <- data[folds==i,] 
+truth <- test$diabetic 
+fit <- glm(diabetic~age + bmi + glu,
+data=train, family="binomial")
+probs <- predict(fit, newdata=test, type="response")
+diags<-rbind(diags,class_diag(probs,truth))
+}
+diags%>%summarize_all(mean)
+
+```
+The out-of-sample accuracy is about the same as the accuracy obtained from the linear regression in part 5. 
+
+*The End*

@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="author" content="Rima Mughawish" />
+    <meta name="description" content="Describe your website">
+    <link rel="shortcut icon" type="image/x-icon" href="/img/favicon.ico">
+    <title>Project 2</title>
+    <meta name="generator" content="Hugo 0.70.0" />
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+    <link rel="stylesheet" type="text/css" href="/css/main.css" />
+    <link rel="stylesheet" type="text/css" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" />
+    <link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:200,400,200bold,400old" />
+    
+    <!--[if lt IE 9]>
+			<script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+			<script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+		<![endif]-->
+
+    
+  </head>
+
+  <body>
+    <div id="wrap">
+
+      
+      <nav class="navbar navbar-default">
+  <div class="container">
+    <div class="navbar-header">
+      <a class="navbar-brand" href="/"><i class="fa fa-home"></i></a>
+      <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#navbar">
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+    </div>
+    <div class="navbar-collapse collapse" id="navbar">
+      <ul class="nav navbar-nav navbar-right">
+      
+        
+        <li><a href="/blog/">BLOG</a></li>
+        
+        <li><a href="/projects/">PROJECTS</a></li>
+        
+        <li><a href="/resume/">RESUME</a></li>
+        
+      
+      </ul>
+    </div>
+  </div>
+</nav>
+
+      
+      <div class="container">
+        <div class="blog-post">
+          <h3>
+            <strong><a href="/project2/">Project 2</a></strong>
+          </h3>
+        </div>
+        <div class="blog-title">
+          <h4>
+          January 1, 0001
+            &nbsp;&nbsp;
+            
+          </h4>
+        </div>
+        <div class="panel panel-default">
+          <div class="panel-body">
+            <div class="blogpost">
+              
+
+
+<pre class="r"><code>library(MASS)
+??Pima.tr
+diabetes &lt;- Pima.tr
+head(diabetes)</code></pre>
+<pre><code>##   npreg glu bp skin  bmi   ped age type
+## 1     5  86 68   28 30.2 0.364  24   No
+## 2     7 195 70   33 25.1 0.163  55  Yes
+## 3     5  77 82   41 35.8 0.156  35   No
+## 4     0 165 76   43 47.9 0.259  26   No
+## 5     0 107 60   25 26.4 0.133  23   No
+## 6     5  97 76   27 35.6 0.378  52  Yes</code></pre>
+<p>For this project, I picked the data set Pima.tr from package “MASS” to work with. This data set has 200 observations (Indian Women) and 8 variables. The variables measure the number of pregnancies, plasma glucose concentration, diastolic blood pressure, triceps skin fold thickness, body mass index, diabetes pedigree function, the women’s age in years, and finally the variable type which answers the question are they dibetic?(yes or no) according to the World Health Organization (WHO) criteria. These observations are the measured heights for parents and children classified by gender.</p>
+<p><em>MANOVA</em></p>
+<pre class="r"><code>library(mvtnorm); library(ggExtra)
+
+## Multivariate assumption
+df&lt;-rmvnorm(1000,mean=c(0,0),sigma=matrix(c(1,.5,.5,1),ncol=2,byrow=T))
+df&lt;-data.frame(df)%&gt;%rename(Y1=X1,Y2=X2)
+p&lt;-ggplot(df, aes(Y1,Y2))+geom_point(alpha=.5)+geom_density_2d(h=2)+coord_fixed()
+ggMarginal(p,type=&quot;density&quot;,xparams = list(bw=.5), yparams=list(bw=.5))</code></pre>
+<p><img src="/project2_files/figure-html/unnamed-chunk-2-1.png" width="768" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>cov(df)</code></pre>
+<pre><code>##           Y1        Y2
+## Y1 1.0721742 0.5424434
+## Y2 0.5424434 1.0657050</code></pre>
+<pre class="r"><code>ggplot(diabetes, aes(x = glu, y = bp, z = age)) +
+geom_point(alpha = .5) + geom_density_2d(h=2) + coord_fixed() + facet_wrap(~type)</code></pre>
+<p><img src="/project2_files/figure-html/unnamed-chunk-2-2.png" width="768" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>#MANOVA
+covmats&lt;-diabetes%&gt;%group_by(type)%&gt;%do(covs=cov(.[2:3]))
+for(i in 1:2){print(as.character(covmats$type[i])); print(covmats$covs[i])}</code></pre>
+<pre><code>## [1] &quot;No&quot;
+## [[1]]
+##           glu        bp
+## glu 709.56118  81.43026
+## bp   81.43026 122.84525
+## 
+## [1] &quot;Yes&quot;
+## [[1]]
+##           glu        bp
+## glu 907.25022  23.71115
+## bp   23.71115 134.18613</code></pre>
+<pre class="r"><code>man1&lt;-manova(cbind(age,bp, glu, bmi)~type, data=diabetes)
+summary(man1)</code></pre>
+<pre><code>## Df Pillai approx F num Df den Df Pr(&gt;F)
+## type 1 0.30444 21.338 4 195 1.301e-14 ***
+## Residuals 198
+## ---
+## Signif. codes: 0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1
+&#39; &#39; 1</code></pre>
+<pre class="r"><code>#Follow-up one way ANOVAs for Each variable 
+summary.aov(man1)</code></pre>
+<pre><code>## Response age :
+## Df Sum Sq Mean Sq F value Pr(&gt;F)
+## type 1 3209.3 3209.3 30.606 9.926e-08 ***
+## Residuals 198 20762.2 104.9
+## ---
+## Signif. codes: 0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1
+&#39; &#39; 1
+##
+## Response bp :
+## Df Sum Sq Mean Sq F value Pr(&gt;F)
+## type 1 1141.3 1141.28 9.009 0.003032 **
+## Residuals 198 25083.2 126.68
+## ---
+## Signif. codes: 0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1
+&#39; &#39; 1
+##
+## Response glu :
+## Df Sum Sq Mean Sq F value Pr(&gt;F)
+## type 1 45822 45822 59.014 7.075e-13 ***
+## Residuals 198 153738 776
+## ---
+## Signif. codes: 0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1
+&#39; &#39; 1
+##
+## Response bmi :
+## Df Sum Sq Mean Sq F value Pr(&gt;F)
+## type 1 592.9 592.87 17.049 5.368e-05 ***
+## Residuals 198 6885.4 34.77
+## ---
+## Signif. codes: 0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1
+&#39; &#39; 1</code></pre>
+<pre class="r"><code>diabetes%&gt;%group_by(type)%&gt;%summarize(mean(bp),mean(age), mean(glu), mean(bmi))</code></pre>
+<pre><code>## # A tibble: 2 x 5
+##   type  `mean(bp)` `mean(age)` `mean(glu)` `mean(bmi)`
+##   &lt;fct&gt;      &lt;dbl&gt;       &lt;dbl&gt;       &lt;dbl&gt;       &lt;dbl&gt;
+## 1 No          69.5        29.2        113.        31.1
+## 2 Yes         74.6        37.7        145.        34.7</code></pre>
+<pre class="r"><code>#post-hoc t-test
+pairwise.t.test(diabetes$bp,diabetes$type,
+                p.adj=&quot;none&quot;)</code></pre>
+<pre><code>## 
+##  Pairwise comparisons using t tests with pooled SD 
+## 
+## data:  diabetes$bp and diabetes$type 
+## 
+##     No   
+## Yes 0.003
+## 
+## P value adjustment method: none</code></pre>
+<pre class="r"><code>pairwise.t.test(diabetes$bmi,diabetes$type,
+                p.adj=&quot;none&quot;)</code></pre>
+<pre><code>## 
+##  Pairwise comparisons using t tests with pooled SD 
+## 
+## data:  diabetes$bmi and diabetes$type 
+## 
+##     No     
+## Yes 5.4e-05
+## 
+## P value adjustment method: none</code></pre>
+<pre class="r"><code>pairwise.t.test(diabetes$age,diabetes$type,
+                p.adj=&quot;none&quot;)</code></pre>
+<pre><code>## 
+##  Pairwise comparisons using t tests with pooled SD 
+## 
+## data:  diabetes$age and diabetes$type 
+## 
+##     No     
+## Yes 9.9e-08
+## 
+## P value adjustment method: none</code></pre>
+<pre class="r"><code>pairwise.t.test(diabetes$glu,diabetes$type,
+                p.adj=&quot;none&quot;)</code></pre>
+<pre><code>## 
+##  Pairwise comparisons using t tests with pooled SD 
+## 
+## data:  diabetes$glu and diabetes$type 
+## 
+##     No     
+## Yes 7.1e-13
+## 
+## P value adjustment method: none</code></pre>
+<pre class="r"><code># 1 MANOVA, 4 ANOVAs, and 8 t.tests is 13 tests total
+#bonferroni adjustment
+0.05/13</code></pre>
+<pre><code>## [1] 0.003846154</code></pre>
+<pre class="r"><code>#probability of making a type I error 
+1-(0.95^13)</code></pre>
+<pre><code>## [1] 0.4866579</code></pre>
+<p><em>MANOVA Assumptions:</em>
+1. Random samples, independent observations
+2. Multivariate normality of blood pressure, age, glucose concentration, and BMI (response variables)
+3. Homogeneity of within-group covariance matrices
+4. Linear relationship among response variables
+5. No extreme univariate or multivariate outliers
+6. No multicollinearity</p>
+<p>Most (if not all) of these assumptions have been met as can be seen in the beginning.</p>
+<p>Conclusion:</p>
+<p>A One way MANOVA was conduct to determine the effect of diabetes on glucouse concentration, age, blood pressure, and BMI. Significant differences were found among the the diabetic and non-diabetic groups, <em>Pillai trace</em>= 0.3044, <em>Pseudo</em> F(4,195) = 21.338, and P-value = 1.30e-14.</p>
+<p>Due to this significance, we conducted Univariate ANOVAs for each of the response (Dependent) variables as follow-up tests to the MANOVA. The Bonferroni method for controlling Type I error rates for multiple
+comparisons was used. The Univariate ANOVA’s for all four response variables were significant, p-value&lt;&lt;0.05.</p>
+<p>Finally, even though it is not needed because we are only comparing two groups, post-hoc t.test was ran for each of the groups. The two types (Diabetic and non-diabetic) differed across all of the response variables that are tested, bonferroni adjustment = 0.05/13 = 0.003846154, meaning the results are all significant.</p>
+<p>Without adjusting our alpha, the probability of making a type I error would be 48.67%.</p>
+<p><em>Randomization test</em>
+Hypotheses:
+Null Hypothesis: There is no significant difference in mean blood pressure between diabetic and non-diabetic indian woman.<br />
+Alternative hypothesis: There is a significant difference in mean blood pressure between diabetic and non-diabetic indian woman.</p>
+<pre class="r"><code>#Type (Diabetic or not) vs. bp
+head(diabetes)</code></pre>
+<pre><code>##   npreg glu bp skin  bmi   ped age type
+## 1     5  86 68   28 30.2 0.364  24   No
+## 2     7 195 70   33 25.1 0.163  55  Yes
+## 3     5  77 82   41 35.8 0.156  35   No
+## 4     0 165 76   43 47.9 0.259  26   No
+## 5     0 107 60   25 26.4 0.133  23   No
+## 6     5  97 76   27 35.6 0.378  52  Yes</code></pre>
+<pre class="r"><code>diabetes%&gt;%group_by(type)%&gt;%
+  summarize(means=mean(bp))%&gt;%summarize(`mean_diff:`=diff(means))</code></pre>
+<pre><code>## # A tibble: 1 x 1
+##   `mean_diff:`
+##          &lt;dbl&gt;
+## 1         5.04</code></pre>
+<pre class="r"><code>rand_dist&lt;-vector()
+
+for(i in 1:5000){
+diabetes.new&lt;-data.frame(bp=sample(diabetes$bp),type=diabetes$type) 
+rand_dist[i]&lt;-mean(diabetes.new[diabetes.new$type==&quot;Yes&quot;,]$bp)-
+              mean(diabetes.new[diabetes.new$type==&quot;No&quot;,]$bp)}
+
+{hist(rand_dist,main=&quot;&quot;,ylab=&quot;&quot;); abline(v = 5.042781,col=&quot;red&quot;)}</code></pre>
+<p><img src="/project2_files/figure-html/unnamed-chunk-3-1.png" width="768" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>#p-value 
+mean(rand_dist&gt;5.042781)*2</code></pre>
+<pre><code>## [1] 0.002</code></pre>
+<pre class="r"><code>t.test(data=diabetes,bp~type)</code></pre>
+<pre><code>##
+## Welch Two Sample t-test
+##
+## data: bp by type
+## t = -2.9592, df = 130.28, p-value = 0.003665
+## alternative hypothesis: true difference in means is not
+equal to 0
+## 95 percent confidence interval:
+## -8.414080 -1.671482
+## sample estimates:
+## mean in group No mean in group Yes
+## 69.54545 74.58824</code></pre>
+<p>Interperting the results:
+On average, Indian women who are diabetic have a significantly higher mean distolic blood pressure than those who are not diabetic. p-value = 0.0032.
+This can be confirmed furthermore by the t.test that was conducted, t-statistic = -2.9592, p-value= 0.0037, which is close to the answer that we got using the randomization test.</p>
+<p><em>Linear Regression Model</em>
+Hypotheses:
+Null: BMI does not explain a significant variation in blood pressure and blood glucose concentration.
+ALterantive: BMI explains a significant variation in blood pressure and blood glucose concentration.</p>
+<pre class="r"><code>library(ggplot2)
+library(sandwich)
+library(lmtest)
+
+#Checking assumptions: 
+#Linearity and Homoskedsaticity
+residsbp &lt;- lm(bmi~bp, data = diabetes)$residuals
+ggplot()+geom_histogram(aes(residsbp), bins = 10) </code></pre>
+<p><img src="/project2_files/figure-html/unnamed-chunk-4-1.png" width="768" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>residsglu &lt;-lm(bmi~glu, data = diabetes)$residuals
+ggplot()+geom_histogram(aes(residsglu), bins = 10) </code></pre>
+<p><img src="/project2_files/figure-html/unnamed-chunk-4-2.png" width="768" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>fitted_bp &lt;- lm(bmi~bp, data = diabetes)$fitted.values
+ggplot()+geom_point(aes(fitted_bp,residsbp))+ geom_hline(yintercept = 0, color = &#39;red&#39;)</code></pre>
+<p><img src="/project2_files/figure-html/unnamed-chunk-4-3.png" width="768" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>fitted_glu &lt;- lm(bmi~glu, data = diabetes)$fitted.values
+ggplot()+geom_point(aes(fitted_glu,residsbp)) + geom_hline(yintercept = 0, color = &#39;red&#39;)</code></pre>
+<p><img src="/project2_files/figure-html/unnamed-chunk-4-4.png" width="768" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>#Normality 
+ggplot()+geom_qq(aes(sample=residsbp))+geom_qq_line(aes(sample=residsbp))</code></pre>
+<p><img src="/project2_files/figure-html/unnamed-chunk-4-5.png" width="768" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>ggplot()+geom_qq(aes(sample=residsglu))+geom_qq_line(aes(sample=residsglu))</code></pre>
+<p><img src="/project2_files/figure-html/unnamed-chunk-4-6.png" width="768" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>#centering the response variables 
+diabetes$bp_c &lt;- diabetes$bp - mean(diabetes$bp)
+diabetes$glu_c &lt;- diabetes$glu - mean(diabetes$glu)
+
+#running the regression
+regression &lt;- lm(bmi~bp_c * glu_c, data = diabetes)
+summary(regression)</code></pre>
+<pre><code>##
+## Call:
+## lm(formula = bmi ~ bp_c * glu_c, data = diabetes)
+##
+## Residuals:
+## Min 1Q Median 3Q Max
+## -13.691 -4.173 0.075 3.546 14.730
+##
+## Coefficients:
+## Estimate Std. Error t value Pr(&gt;|t|)
+## (Intercept) 32.467304 0.429313 75.626 &lt; 2e-16 ***
+## bp_c 0.112462 0.038171 2.946 0.00361 **
+## glu_c 0.032485 0.013686 2.374 0.01859 *
+## bp_c:glu_c -0.001614 0.001084 -1.489 0.13804
+## ---
+## Signif. codes: 0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1
+&#39; &#39; 1
+##
+## Residual standard error: 5.885 on 196 degrees of freedom
+## Multiple R-squared: 0.09237, Adjusted R-squared: 0.07847
+## F-statistic: 6.649 on 3 and 196 DF, p-value: 0.0002678</code></pre>
+<p>Interperting the regression:
+<em>Intercept:</em> Predicted BMI for an average Blood Pressure, and average blood glucose is 32.47
+<em>bp_c:</em> Controlling for blood glucose concentration, the BMI shows an increase of 0.112 for every 1-unit increase in blood pressure on average.
+<em>glu_c:</em> Controlling for blood pressure , the BMI shows an increase of 0.0325 for every 1-unit increase in blood glucose concentration average.
+<em>bp_cxglu_c:</em> The slope for blood pressure on BMI is 0.0016 lower for those with average glucose level.</p>
+<pre class="r"><code>library(dplyr)
+library(tidyverse)
+#Plotting Regresssion
+new1&lt;-diabetes
+new1$bp_c&lt;-mean(diabetes$bp_c)
+new1$mean&lt;-predict(regression,new1)
+new1$bp_c&lt;-mean(diabetes$bp_c)+sd(diabetes$bp_c)
+new1$plus.sd&lt;-predict(regression,new1)
+new1$bp_c&lt;-mean(diabetes$bp_c)-sd(diabetes$bp_c)
+new1$minus.sd&lt;-predict(regression,new1)
+
+mycols&lt;-c(&quot;#619CFF&quot;,&quot;#F8766D&quot;,&quot;#00BA38&quot;)
+names(mycols)&lt;-c(&quot;-1 sd&quot;,&quot;mean&quot;,&quot;+1 sd&quot;)
+mycols=as.factor(mycols)
+
+ggplot(diabetes,aes(glu_c,bmi),group=mycols)+geom_point()+geom_line(data=new1,aes(y=mean,color=&quot;mean&quot;))+geom_line(data=new1,aes(y=plus.sd,color=&quot;+1 sd&quot;))+geom_line(data=new1,aes(y=minus.sd,color=&quot;-1 sd&quot;))+scale_color_manual(values=mycols)+labs(color=&quot;blood pressure&quot;)+theme(legend.position=c(.9,.2))</code></pre>
+<p><img src="/project2_files/figure-html/unnamed-chunk-5-1.png" width="768" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>fit&lt;-lm(bmi~glu_c*bp_c, data=diabetes)
+summary(fit)</code></pre>
+<pre><code>##
+## Call:
+## lm(formula = bmi ~ glu_c * bp_c, data = diabetes)
+##
+## Residuals:
+## Min 1Q Median 3Q Max
+## -13.691 -4.173 0.075 3.546 14.730
+##
+## Coefficients:
+## Estimate Std. Error t value Pr(&gt;|t|)
+## (Intercept) 32.467304 0.429313 75.626 &lt; 2e-16 ***
+## glu_c 0.032485 0.013686 2.374 0.01859 *
+## bp_c 0.112462 0.038171 2.946 0.00361 **
+## glu_c:bp_c -0.001614 0.001084 -1.489 0.13804
+## ---
+## Signif. codes: 0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1
+&#39; &#39; 1
+##
+## Residual standard error: 5.885 on 196 degrees of freedom
+## Multiple R-squared: 0.09237, Adjusted R-squared: 0.07847
+## F-statistic: 6.649 on 3 and 196 DF, p-value: 0.0002678</code></pre>
+<pre class="r"><code>coeftest(fit, vcov=vcovHC(fit))[,1:2]</code></pre>
+<pre><code>##                 Estimate  Std. Error
+## (Intercept) 32.467303695 0.442381628
+## glu_c        0.032484503 0.013894139
+## bp_c         0.112462326 0.040855784
+## glu_c:bp_c  -0.001614401 0.001102631</code></pre>
+<p>After recomputing regression results with robust standard errors, we can see how the standard errors for the intercept, glu_c, bp_c and their interaction increase slightly. The change was not as great because the homoskadcity assumption was met.</p>
+<p>Finally, 7.85% of the variation in BMI can be explained by this model (p-value = 0.000268).</p>
+<pre class="r"><code>#Bootstrapping SEs
+set.seed(348)
+data &lt;- diabetes
+regression &lt;- lm(bmi ~ glu_c*bp_c, data = data)
+resids &lt;- regression$residuals
+fitted &lt;- regression$fitted.values
+resid_resamp &lt;- replicate(5000, {
+new_resids &lt;- sample(resids, replace = TRUE)
+data$new_y &lt;- fitted + new_resids
+regression &lt;- lm(new_y ~ glu_c*bp_c, data = data)
+coef(regression)
+})
+resid_resamp %&gt;% t %&gt;% as.data.frame %&gt;% summarize_all(sd)</code></pre>
+<pre><code>##   (Intercept)      glu_c       bp_c  glu_c:bp_c
+## 1   0.4251166 0.01346967 0.03864664 0.001084526</code></pre>
+<p>The Bootstrapped SEs are closer to the SEs that were calculated without the rebost. They are about the same.</p>
+<p><em>Logistic Regression</em></p>
+<pre class="r"><code>#Dummy coding diabetic
+dia.new &lt;- diabetes%&gt;% mutate(diabetic = ifelse(type == &quot;Yes&quot;, 1,0))
+head(dia.new)</code></pre>
+<pre><code>## npreg glu bp skin bmi ped age type bp_c glu_c diabetic
+## 1 5 86 68 28 30.2 0.364 24 No -3.26 -37.97 0
+## 2 7 195 70 33 25.1 0.163 55 Yes -1.26 71.03 1
+## 3 5 77 82 41 35.8 0.156 35 No 10.74 -46.97 0
+## 4 0 165 76 43 47.9 0.259 26 No 4.74 41.03 0
+## 5 0 107 60 25 26.4 0.133 23 No -11.26 -16.97 0
+## 6 5 97 76 27 35.6 0.378 52 Yes 4.74 -26.97 1</code></pre>
+<pre class="r"><code>#Logistic Regression
+dia.fit &lt;- glm(diabetic ~ age + bmi + glu + bp, data = dia.new, family = &quot;binomial&quot;)
+summary(dia.fit)</code></pre>
+<pre><code>##
+## Call:
+## glm(formula = diabetic ~ age + bmi + glu + bp, family =
+&quot;binomial&quot;,
+## data = dia.new)
+##
+## Deviance Residuals:
+## Min 1Q Median 3Q Max
+## -2.2117 -0.7002 -0.4018 0.7021 2.3822
+##
+## Coefficients:
+## Estimate Std. Error z value Pr(&gt;|z|)
+## (Intercept) -9.144169 1.647351 -5.551 2.84e-08 ***
+## age 0.054793 0.018166 3.016 0.00256 **
+## bmi 0.093564 0.032645 2.866 0.00416 **
+## glu 0.031224 0.006560 4.760 1.94e-06 ***
+## bp -0.006076 0.017345 -0.350 0.72612
+## ---
+## Signif. codes: 0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1
+&#39; &#39; 1
+##
+## (Dispersion parameter for binomial family taken to be 1)
+##
+## Null deviance: 256.41 on 199 degrees of freedom
+## Residual deviance: 188.27 on 195 degrees of freedom
+## AIC: 198.27
+##
+## Number of Fisher Scoring iterations: 5</code></pre>
+<pre class="r"><code>exp(coef(dia.fit))</code></pre>
+<pre><code>## (Intercept) age bmi glu bp
+## 0.000106841 1.056321870 1.098080559 1.031716368
+0.993942705</code></pre>
+<p>Interpret coefficients:
+<em>Intercept:</em> Odds for diabetes at age = 0, BMI= 0, blood glucose conc. = 0, and blood pressure = 0 is 0.0001068.
+<em>age:</em> Controlling for BMI, glu, and bp, as age increases by 1 year, the odds of diabetes increases by 1.0563.
+<em>bmi:</em> Controlling for age, glu, and bp, as BMI increases by 1 unit, the odds of diabetes increase by 1.0981.
+<em>glu:</em> Controlling for age, BMI, and bp, as blood glucose concentration increases by 1 unit, the odds of diabetes increase by 1.0317.
+<em>bp:</em> Controlling for age, BMI, and glu, as diastolic blood pressure increases by 1 unit, the odds of diabetes increase by 0.9939.</p>
+<pre class="r"><code>#Confusion matrix 
+library(class)
+probs &lt;- predict(dia.fit, type = &quot;response&quot;)
+table(predict = as.numeric(probs&gt;.5), truth=dia.new$diabetic)%&gt;%addmargins</code></pre>
+<pre><code>##        truth
+## predict   0   1 Sum
+##     0   113  30 143
+##     1    19  38  57
+##     Sum 132  68 200</code></pre>
+<pre class="r"><code>class_diag &lt;- function(probs,truth){
+
+tab&lt;-table(factor(probs&gt;.5,levels=c(&quot;FALSE&quot;,&quot;TRUE&quot;)),truth)
+acc=sum(diag(tab))/sum(tab)
+sens=tab[2,2]/colSums(tab)[2]
+spec=tab[1,1]/colSums(tab)[1]
+ppv=tab[2,2]/rowSums(tab)[2]
+if(is.numeric(truth)==FALSE &amp; is.logical(truth)==FALSE) truth&lt;-as.numeric(truth)-1
+
+ord&lt;-order(probs, decreasing=TRUE)
+probs &lt;- probs[ord]; truth &lt;- truth[ord]
+TPR=cumsum(truth)/max(1,sum(truth))
+FPR=cumsum(!truth)/max(1,sum(!truth))
+dup&lt;-c(probs[-1]&gt;=probs[-length(probs)], FALSE)
+TPR&lt;-c(0,TPR[!dup],1); FPR&lt;-c(0,FPR[!dup],1)
+n &lt;- length(TPR)
+auc&lt;- sum( ((TPR[-1]+TPR[-n])/2) * (FPR[-1]-FPR[-n]) )
+data.frame(acc,sens,spec,ppv,auc)
+}
+class_diag(probs, dia.new$diabetic)</code></pre>
+<pre><code>##     acc      sens      spec       ppv      auc
+## 1 0.755 0.5588235 0.8560606 0.6666667 0.834893</code></pre>
+<p>The accuracy of this model is alright, so is the auc, however, we could imporve the senesitivity and sepcificity.</p>
+<pre class="r"><code>#Density Plot
+dia.new$logit &lt;- predict(dia.fit,type=&quot;link&quot;)
+dia.new%&gt;% ggplot()+geom_density(aes(logit,color=type,fill=type), alpha=.4)+
+  theme(legend.position=c(.85,.85))+geom_vline(xintercept=0)+xlab(&quot;logit (log-odds)&quot;)+
+  geom_rug(aes(logit,color=type))+
+  geom_text(x=-5,y=.07,label=&quot;TN = 428&quot;)+
+  geom_text(x=-1.75,y=.008,label=&quot;FN = 21&quot;)+
+  geom_text(x=1,y=.006,label=&quot;FP = 16&quot;)+
+  geom_text(x=5,y=.04,label=&quot;TP = 218&quot;)</code></pre>
+<p><img src="/project2_files/figure-html/unnamed-chunk-9-1.png" width="768" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>#ROC 
+library(pROC)
+library(plotROC)
+ROC &lt;- ggplot(dia.new) + geom_roc(aes(d = diabetic, m = probs),
+n.cuts = 0)
+ROC</code></pre>
+<p><img src="/project2_files/figure-html/unnamed-chunk-9-2.png" width="768" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>calc_auc(ROC)</code></pre>
+<pre><code>##   PANEL group      AUC
+## 1     1    -1 0.834893</code></pre>
+<p>The probability of a random number is predicted by our model correctly is 83.49%.</p>
+<pre class="r"><code>#10 fold CV
+set.seed(1234)
+k=10 
+data&lt;-dia.new[sample(nrow(dia.new)),] 
+folds&lt;-cut(seq(1:nrow(dia.new)),breaks=k,labels=F)
+diags&lt;-NULL
+for(i in 1:k){
+train&lt;-data[folds!=i,]
+test&lt;-data[folds==i,]
+truth&lt;-test$diabetic
+fit&lt;-dia.fit
+probs&lt;-predict(fit,newdata = test,type=&quot;response&quot;)
+diags&lt;-rbind(diags,class_diag(probs,truth))
+}
+summarize_all(diags,mean)</code></pre>
+<pre><code>##     acc      sens      spec       ppv      auc
+## 1 0.755 0.5407828 0.8550688 0.6708225 0.826265</code></pre>
+<p>Out of sample Accuracy is still the same (0.755). Out of sample sensitivity is 0.5408 which is lower than the value that was obtained for the in sample sensitivity. Since the AUC dropped, this shows that there is some overfitting by the model, therefore we will need to conduct a lasso regressio to reduce this overfitting.</p>
+<p><em>LASSO Regression</em></p>
+<pre class="r"><code>library(glmnet)
+library(Matrix)
+set.seed(1234)
+y&lt;-as.matrix(dia.new$diabetic)
+x&lt;-model.matrix(diabetic~ age + bmi + glu + bp, data=dia.new)[,-1]
+head(x)</code></pre>
+<pre><code>##   age  bmi glu bp
+## 1  24 30.2  86 68
+## 2  55 25.1 195 70
+## 3  35 35.8  77 82
+## 4  26 47.9 165 76
+## 5  23 26.4 107 60
+## 6  52 35.6  97 76</code></pre>
+<pre class="r"><code>cv &lt;- cv.glmnet(x, y, family = &quot;binomial&quot;)
+lasso &lt;- glmnet(x, y, lambda = cv$lambda.1se, family = &quot;binomial&quot;)
+coef(lasso)</code></pre>
+<pre><code>## 5 x 1 sparse Matrix of class &quot;dgCMatrix&quot;
+##                     s0
+## (Intercept) -5.1566920
+## age          0.0256509
+## bmi          0.0309193
+## glu          0.0207771
+## bp           .</code></pre>
+<p>Variables that are retained: age, BMI, and blood glucose concentration. Diastolic blood pressure was not as was indicated by the lasso regression. Moreover, if we were to look at the results from the logistic regression we would see that diastolic blood pressure was the only non-significant predictor.</p>
+<pre class="r"><code>set.seed(1234)
+k=10
+data &lt;- dia.new %&gt;% sample_frac 
+folds &lt;- ntile(1:nrow(data),n=10) 
+diags&lt;-NULL
+for(i in 1:k){
+train &lt;- data[folds!=i,]
+test &lt;- data[folds==i,] 
+truth &lt;- test$diabetic 
+fit &lt;- glm(diabetic~age + bmi + glu,
+data=train, family=&quot;binomial&quot;)
+probs &lt;- predict(fit, newdata=test, type=&quot;response&quot;)
+diags&lt;-rbind(diags,class_diag(probs,truth))
+}
+diags%&gt;%summarize_all(mean)</code></pre>
+<pre><code>##    acc      sens      spec       ppv       auc
+## 1 0.75 0.5205808 0.8641597 0.6833333 0.8154777</code></pre>
+<p>The out-of-sample accuracy is about the same as the accuracy obtained from the linear regression in part 5.</p>
+<p><em>The End</em></p>
+
+              <hr>
+              <div class="related-posts">
+                <h5>Related Posts</h5>
+                
+              </div>
+            </div>
+          </div>
+          <hr>
+        <div class="disqus">
+  <div id="disqus_thread"></div>
+  <script type="text/javascript">
+
+    (function() {
+      
+      
+      if (window.location.hostname == "localhost")
+        return;
+
+      var disqus_shortname = '';
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+  </script>
+  <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+  <a href="http://disqus.com/" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+</div>
+        </div>
+      </div>
+      
+    </div>
+
+    
+    <footer>
+  <div id="footer">
+    <div class="container">
+      <p class="text-muted">&copy; All rights reserved. Powered by <a href="https://gohugo.io/">Hugo</a> and
+      <a href="http://www.github.com/nurlansu/hugo-sustain/">sustain</a> with ♥</p>
+    </div>
+  </div>
+</footer>
+<div class="footer"></div>
+
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+<script src="/js/docs.min.js"></script>
+<script src="/js/main.js"></script>
+
+<script src="/js/ie10-viewport-bug-workaround.js"></script>
+
+
+    
+  </body>
+</html>
