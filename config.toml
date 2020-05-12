@@ -11,7 +11,7 @@ theme = "hugo-sustain"
   post = "/:year/:month/:day/:slug"
 
 [params]
-  avatar = "IMG_0464.JPG"
+  avatar = "mypic.png"
   author = "Rima Mughawish"
   description = "Describe your website"
 
@@ -24,7 +24,7 @@ theme = "hugo-sustain"
   Email         = "rima.mughawish@utexas.edu"
   Twitter       = "rima_Mughawish"
   LinkedIn      = "rima-mughawish-967b64186"
-  Instagram     = "rimamughawish"
+
  
  
  
