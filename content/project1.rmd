@@ -16,9 +16,9 @@ knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 library(dplyr)
 library(readr)
-Dataset1 <- read_csv("~/Dataset1.csv")
+Dataset1 <- read_csv("Dataset1.csv")
 glimpse(Dataset1)
-Dataset2 <- read_csv("~/Dataset2.csv")
+Dataset2 <- read_csv("Dataset2.csv")
 glimpse(Dataset2)
 ```
 
