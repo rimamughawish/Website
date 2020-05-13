@@ -2,7 +2,7 @@
 title: "Projects.rmd"
 author: "Rima Mughawish"
 output: html_document
-showpagemeta: false
+showpagemeta: FALSE
 ---
 
 ```{r setup, include=FALSE}

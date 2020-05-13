@@ -1,10 +1,11 @@
 ---
 title: "Project 1"
 author: "Rima Mughawish (rm53682)"
-date: "3/1/2020"
+date: '2020-03-15'
 output:
   pdf_document: default
   html_document: default
+
 ---
 
 ```{r setup, include=FALSE}
