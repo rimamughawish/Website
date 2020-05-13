@@ -16,11 +16,9 @@ knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 library(dplyr)
 library(readr)
-read.csv("Dataset1.csv")
-read.csv("Dataset2.csv")
-Dataset1 <- read_csv("Dataset1.csv")
+Dataset1 <- read.csv("Dataset1.csv")
 glimpse(Dataset1)
-Dataset2 <- read_csv("Dataset2.csv")
+Dataset2 <- read.csv("Dataset2.csv")
 glimpse(Dataset2)
 ```
 
@@ -59,7 +57,7 @@ combdata %>% glimpse
 ```{r}
 #Wrangling and statistical analysis: 
 longdat <- combdata %>% distinct() %>% 
-  rename(Med_Expan = `Medicaid Expansion State?        Yes (Y) or No (N)1`) %>% 
+  rename(Med_Expan = `Medicaid Expansion State?        Yes (Y) or No (N)1`) %>% 
   rename(Percent_uninsured2016 = `2016 Uninsured Percent`) %>% 
   rename(Percent_uninsured2017 = `2017 Uninsured Percent`)
 

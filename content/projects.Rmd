@@ -2,6 +2,7 @@
 title: "Projects.rmd"
 author: "Rima Mughawish"
 date: "5/11/2020"
+showpagemeta: false
 output: html_document
 ---
 
