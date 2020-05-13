@@ -1,11 +1,11 @@
 ---
 title: 'Python-R interaction '
-author: Rima Mughawish
+author: "Rima Mughawish"
 date: '2020-05-12'
-slug: python-r-interaction
-categories: []
-tags: []
 description: ''
+slug: python-r-interaction
+tags: []
+categories: []
 ---
 
 *Blogpost 1*
