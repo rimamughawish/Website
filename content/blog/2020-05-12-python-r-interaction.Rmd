@@ -48,4 +48,5 @@ UTs_dict['Motto'].append('You Belong Here')
 print(UTs_dict)
 
 ```
-![hookem horns](/blog/2020-05-12-python-r-interaction_files/ut-tower-fireworks-1.jpg)
+
+![Hookem](/blog/2020-05-12-python-r-interaction_files/ut-tower-fireworks-1.jpg)
