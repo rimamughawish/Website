@@ -1,8 +1,10 @@
 ---
 title: "Projects.rmd"
 author: "Rima Mughawish"
-date: "5/11/2020"
-showpagemeta: false
+date: "YYYY-MM-DD"
+# e.g., 2020-05-06 for today
+#or, for the current date
+date: "`r Sys.Date()`"
 output: html_document
 ---
 
