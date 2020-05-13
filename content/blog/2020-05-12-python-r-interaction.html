@@ -1,0 +1,42 @@
+---
+title: 'Python-R interaction '
+author: "Rima Mughawish"
+date: '2020-05-12'
+description: ''
+slug: python-r-interaction
+tags: []
+categories: []
+---
+
+
+
+<p><em>Blogpost 1</em></p>
+<p>One of the most interesting topics to me was the interaction between R and Python. It is amazing that we can run Python code in R. In this blog post I will be showing how that can be possible.</p>
+<p>Usually in R markdown, when we try to run a code, we create a code chunk which can be done by adding three backticks followed by curly brakets containing the letter R; like this (```{R}). This chunk is closed by adding three more backticks at the end of the chunk. Inside the chunk we can write the code and it is run by R.</p>
+<pre class="r"><code>2+2</code></pre>
+<pre><code>## [1] 4</code></pre>
+<pre class="r"><code>7*50</code></pre>
+<pre><code>## [1] 350</code></pre>
+<pre class="r"><code>4/5</code></pre>
+<pre><code>## [1] 0.8</code></pre>
+<p>In order to run a python code in R, all we have to do is replace the letter R in the curly brakets with the word Python, like this (```{Python}). The chunk is closed the same way with the three back ticks at the end of the chunk.</p>
+<pre class="python"><code>2+2
+7*50
+4/5</code></pre>
+<p>One difference there is between the two codes is that when we run the python chunk in R we cannot see the output in the markdown file. Instead we see it when the file is knitted out.</p>
+<p>Let’s play with this for a little</p>
+<pre class="python"><code>#Creating a dictionary
+UTs_dict = {
+  &#39;Buildings&#39;:[&#39;SAC&#39;, &#39;PCL&#39;, &#39;Tower&#39;, &#39;NHB&#39;, &#39;BUR&#39;],
+  &#39;size&#39;:&#39;437 acres&#39;,
+  &#39;Motto&#39;: [&#39;What Starts Here Changes the world&#39;, &#39;hookem&#39;]
+}
+
+UTs_dict[&#39;Motto&#39;].append(&#39;You Belong Here&#39;)
+
+print(UTs_dict)
+</code></pre>
+<div class="figure">
+<img src="/blog/2020-05-12-python-r-interaction_files/ut-tower-fireworks-1.jpg" alt="Hookem" />
+<p class="caption">Hookem</p>
+</div>
