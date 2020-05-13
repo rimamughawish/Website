@@ -34,7 +34,7 @@ theme = "hugo-sustain"
   name = "blog"
   weight = 100
   identifier = "blog"
-  url = "website/content/blog/"
+  url = "/blog/"
 [[menu.main]]
   name = "projects"
   identifier = "projects"
