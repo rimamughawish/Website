@@ -1,0 +1,14 @@
+---
+title: "Projects.rmd"
+author: "Rima Mughawish"
+date: "5/11/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+[Exploratory Data Analysis with Tidyverse Tools](/project1)
+
+[Modeling, Testing, and Classification](/project2)

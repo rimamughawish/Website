@@ -1,0 +1,137 @@
+---
+title: "Project 1"
+author: "Rima Mughawish (rm53682)"
+date: "3/1/2020"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+#Data Sets:
+library(tidyverse)
+library(dplyr)
+library(readr)
+read.csv("Dataset1.csv")
+read.csv("Dataset2.csv")
+Dataset1 <- read_csv("Dataset1.csv")
+glimpse(Dataset1)
+Dataset2 <- read_csv("Dataset2.csv")
+glimpse(Dataset2)
+```
+
+*Introduction: The two data sets that I chose to do my project over are the annual change in the US population from 2010- 2019 per state and the percentage of people without health insurance by state in 2016 and 2017 with the margin of errors. The population estimate dataset shows population base in each state, which is the population of each state in 2010 and shows the population estimate starting from 2010 and up until 2019. It also shows the estimated change in resident population of each state, by year, in addition to the percentage of population change each year, and the national rank of the change in resident total population. The common variable in these two data sets is the states as each of these data sets measure different variables by state. There are also some empty columns in both data sets that need to be removed prior to combining them.*
+
+
+```{R}
+#Tidying Dataset1, population estimate(popest): 
+popest <- Dataset1
+popesttidy <- popest %>% select(1:67)%>%
+  pivot_longer(cols= contains("POPESTIMATE"), names_to = "year", values_to = "PopEstimate") %>%
+  pivot_longer(cols= contains("NPOPCHG"), names_to = "year2", values_to = "NPopChg") %>%
+  pivot_longer(cols= contains("PPOPCHG"), names_to = "year3", values_to = "percentpopchg") %>%
+  pivot_longer(cols= contains("NRANK_POPEST"), names_to = "year4", values_to = "NRANK_Popest") %>%
+  pivot_longer(cols= contains("NRANK_NPCHG"), names_to = "year5", values_to = "NRANK_POPCHG")%>%
+  pivot_longer(cols= contains("NRANK_PPCHG"), names_to = "year6", values_to = "NRank_PPOPCHG") %>%
+  separate(col = year, into = c("del", "year"), sep = 11, convert = F)%>% 
+  select(-year2, -year3, -year4, -year5,-year6, -del) 
+
+glimpse(popesttidy)
+
+#Tidying Dataset 2, uninsured individuals (unins):
+uninsured <- Dataset2 %>% select(1:12) %>%slice(2:52)
+glimpse(uninsured)
+```
+*Tidying: First, using pivot_long() I combined those variables that are measuring the same thing but are measuring them during different years. This process was repeated multiple times until every observation had its own row and every variable had its own column. Then, using seperate(), Two new columns were created; one for year and one that was deleted because it became not relevent once the data was pivoted long. The process was repeated for all the variables. The function select() was used to removed those unwanted columns. For the unisured individuals data set, it was already tidy, however it had a row of NAs, which was removed using the slice function.*
+
+```{R}
+#joining data
+combdata <- full_join(uninsured, popesttidy, by = c("State" = "NAME"))
+combdata %>% glimpse
+```
+*Joining the two data sets: In order to join the two data sets together, the function full_join() was used. The two data sets were joined by state name. Since the state name variable was different between the two sets, the approach that was taken was to set c(State = Name) which basically tells R that those two variables in those two different data sets are actually the same.*
+
+
+```{r}
+#Wrangling and statistical analysis: 
+longdat <- combdata %>% distinct() %>% 
+  rename(Med_Expan = `Medicaid Expansion State?        Yes (Y) or No (N)1`) %>% 
+  rename(Percent_uninsured2016 = `2016 Uninsured Percent`) %>% 
+  rename(Percent_uninsured2017 = `2017 Uninsured Percent`)
+
+longdat %>% select(State, year, PopEstimate, Percent_uninsured2016) %>% filter(year == 2016)%>%
+  arrange(desc(PopEstimate)) %>% distinct() 
+longdat_new <- longdat %>% mutate(uninsured2016 = PopEstimate*(Percent_uninsured2016 /100))
+longdat_new %>% glimpse
+longdat_new %>% group_by(State) %>% filter(year == 2016) %>% summarize(avgPop=mean(PopEstimate)) 
+longdat_new %>% group_by(State) %>% summarize(sduninsured2016 = sd(uninsured2016))
+longdat_new %>% group_by(Med_Expan) %>% filter(Med_Expan == "Y") %>% 
+  summarize(max= max(uninsured2016))
+longdat_new %>% group_by(Med_Expan) %>% filter(Med_Expan == "Y") %>% 
+  summarize(min = min(uninsured2016))
+longdat_new %>% summarize(mean_NPopChg = mean(NPopChg), sd_NPopChg = sd(NPopChg), n=n(), se_NPopChg=sd_NPopChg/sqrt(n))
+longdat_new %>% group_by(State, Med_Expan) %>% summarize(variance=var(percentpopchg))
+longdat_new %>% summarize(IQR_Popestimate = IQR(PopEstimate))
+longdat_new %>% group_by (Med_Expan) %>% summarize(n_distinct(State))
+longdat_new %>% filter(year == 2016) %>% summarize(median_Population2016 = median(PopEstimate))
+cordata <- longdat_new %>% select_if(is.numeric) %>% select(uninsured2016, PopEstimate, Percent_uninsured2016, ESTIMATESBASE2010)%>% na.omit %>%cor()
+cordata
+```
+*Exploring data set and adding a variable: In order to see the state which is expected to have the highest population in 2016, the functions filter() was used. This function extracts rows that are specified. As seen, I filtered the year column and specified it to only have the year 2016 in it as I was interested in seeing what percent of the population did not have health insurance in 2016. The state that had the maximum population estimate in 2016 was California and 7.3% of the population did not have health insurance.*
+
+*Summary statistics calculations: a new variable was created to see how many unisnured individuals (rather than percent) were in each state in 2016. Next, the combined data set (longdat_new) was used to get the mean of the estimated population in 2016 by state, the standard deviation of individuals wihtout health insurance in 2016. For states that had expanded medicade, the maximum number of individuals without medicade in medicade expansion states was 2,884,392, while the minimum number of individuals without medicade in these medicade expansion states was 23,075.  The standard error of mean was calculated for the national population change variable, along side the mean and standard deviation. The variance for percent population change was also computed using the function var(). The IQR of the population estimate was calculated as well. Next, I used n_distinct to find the number of states that have expanded medicade vs those that do not. I then calculated the median of the estimated population, and finally created a correlation matrix for the numeric variables that I am interested in studying.* 
+
+```{r}
+#Visualizing 
+#heatmap
+library(reshape2)
+library(ggplot2)
+melted_cormatrix <- melt(cordata, na.rm = TRUE)
+ggplot(data = melted_cormatrix , aes(x=Var1, y=Var2, fill=value)) + 
+  geom_tile()
+```
+*Heatmap: I created a heatmap which uses the correlation matrix that was created in the section above. This heat map allows the better visualization of the correlation table. The light blue indicates high correlation between the variables, while darker blue indcates lower correlation.*
+
+```{R}
+#Plot 2
+ggplot(data = longdat_new, aes(x = ESTIMATESBASE2010, y = PopEstimate, color = year)) + 
+  geom_point(size=4) + geom_smooth(aes(color = year), stat = "summary")
+```
+
+*Plot 2: I plotted the population that is estimated and the base estimate in 2010 and set the aesthetic to be filled by year. as we can see as the years go by, the population increases as compared to the population base (population in 2010). *
+
+```{R}
+#Plot 3
+ggplot(data = longdat_new, aes(year, percentpopchg)) + 
+  ggtitle("Time (years) vs. Population percent change ") + 
+  xlab("Time (years)") + ylab("Population percent change") + 
+  geom_line(aes(color = Med_Expan)) + 
+  theme() +
+  geom_point(color = "white")
+```
+*Plot 3: For the third plot, I wanted to see how the percent change in population over time and how it is in regards to medicade expansion.*
+
+```{r}
+#Dimentionality Reduction
+longdat_numbers <- longdat %>% select(Percent_uninsured2016, Percent_uninsured2017, percentpopchg, PopEstimate,NPopChg) %>% scale() 
+rownames(longdat_numbers) <- longdat$State
+data_pca <- longdat_numbers %>% na.omit %>% prcomp()
+
+summary(data_pca)
+
+eigval <-  data_pca$sdev^2
+varprop=round(eigval/sum(eigval), 2)
+ggplot() + geom_bar(aes(y=varprop, x=7), stat="identity") + xlab("") + geom_path(aes(y=varprop, x=7)) + 
+  geom_text(aes(x= 7, y=varprop, label=round(varprop, 2)), vjust=1, col="white", size=5) + 
+  scale_y_continuous(breaks=seq(0, .6, .2), labels = scales::percent) + 
+  scale_x_continuous(breaks=1:10)
+round(cumsum(eigval)/sum(eigval), 2)
+eigval 
+
+```
+*For the dimentionality reduction part, I decided to run a PCA to reveal the underlying structure of the variances in my data set. the data is spread out evenly as can be seen by the ggplot. *
+```{R}
